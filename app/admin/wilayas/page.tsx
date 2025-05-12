@@ -1,253 +1,363 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Image from "next/image"
-import { Search, Filter, Plus, ChevronLeft, ChevronRight, Edit, Trash2, Eye, MapPin, Star } from "lucide-react"
+import { Pencil, Trash2, X } from "lucide-react"
 
-// Données fictives pour les wilayas
-const wilayasData = [
-  {
-    id: 1,
-    name: "Tamanrasset",
-    region: "Sud",
-    attractions: 12,
-    activities: 8,
-    rating: 4.9,
-    image: "/images/tassili.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 2,
-    name: "Alger",
-    region: "Centre",
-    attractions: 25,
-    activities: 15,
-    rating: 4.7,
-    image: "/images/casbah.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 3,
-    name: "Oran",
-    region: "Ouest",
-    attractions: 18,
-    activities: 10,
-    rating: 4.6,
-    image: "/images/skikda.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 4,
-    name: "Constantine",
-    region: "Est",
-    attractions: 15,
-    activities: 9,
-    rating: 4.8,
-    image: "/images/tassili.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 5,
-    name: "Béjaïa",
-    region: "Centre",
-    attractions: 14,
-    activities: 12,
-    rating: 4.7,
-    image: "/images/plage-sidi-merouane.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 6,
-    name: "Ghardaïa",
-    region: "Sud",
-    attractions: 10,
-    activities: 6,
-    rating: 4.5,
-    image: "/images/jardin-essai.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 7,
-    name: "Annaba",
-    region: "Est",
-    attractions: 12,
-    activities: 8,
-    rating: 4.6,
-    image: "/images/skikda.jpeg",
-    status: "Brouillon",
-  },
-  {
-    id: 8,
-    name: "Tlemcen",
-    region: "Ouest",
-    attractions: 16,
-    activities: 9,
-    rating: 4.7,
-    image: "/images/casbah.jpeg",
-    status: "Publié",
-  },
-  {
-    id: 9,
-    name: "Djanet",
-    region: "Sud",
-    attractions: 8,
-    activities: 5,
-    rating: 4.8,
-    image: "/images/tassili.jpeg",
-    status: "Brouillon",
-  },
-]
+interface Wilaya {
+  _id: string
+  name: string
+  description: string
+  imageUrl: string
+  overview?: {
+    image: string
+    description: string
+    weather: string
+    bestPeriod: string
+    localCuisine: string
+    culturalEvents: string
+    travelTips: string
+  }
+  attractions?: {
+    name: string
+    description: string
+    image: string
+  }[]
+  createdAt: string
+  updatedAt: string
+}
 
-export default function WilayasPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedWilayas, setSelectedWilayas] = useState<number[]>([])
-  const itemsPerPage = 6
+export default function AdminWilayas() {
+  const [wilayas, setWilayas] = useState<Wilaya[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [newWilaya, setNewWilaya] = useState({
+    name: "",
+    description: "",
+    imageUrl: "",
+    overview: {
+      image: "",
+      description: "",
+      weather: "",
+      bestPeriod: "",
+      localCuisine: "",
+      culturalEvents: "",
+      travelTips: "",
+    },
+    attractions: [] as { name: string; description: string; image: string }[],
+  })
+  const { toast } = useToast()
+  const [newAttraction, setNewAttraction] = useState({ name: "", description: "", image: "" })
 
-  // Filtrer les wilayas en fonction du terme de recherche
-  const filteredWilayas = wilayasData.filter(
-    (wilaya) =>
-      wilaya.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      wilaya.region.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  useEffect(() => {
+    fetchWilayas()
+  }, [])
 
-  // Pagination
-  const indexOfLastWilaya = currentPage * itemsPerPage
-  const indexOfFirstWilaya = indexOfLastWilaya - itemsPerPage
-  const currentWilayas = filteredWilayas.slice(indexOfFirstWilaya, indexOfLastWilaya)
-  const totalPages = Math.ceil(filteredWilayas.length / itemsPerPage)
+  const fetchWilayas = async () => {
+    try {
+      const response = await fetch("/api/wilayas")
+      const data = await response.json()
+      setWilayas(data)
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les wilayas",
+        variant: "error",
+      })
+    }
+  }
+
+  const handleEdit = (wilaya: Wilaya) => {
+    setEditingId(wilaya._id)
+    setNewWilaya({
+      name: wilaya.name,
+      description: wilaya.description,
+      imageUrl: wilaya.imageUrl,
+      overview: {
+        image: wilaya.overview?.image || "",
+        description: wilaya.overview?.description || "",
+        weather: wilaya.overview?.weather || "",
+        bestPeriod: wilaya.overview?.bestPeriod || "",
+        localCuisine: wilaya.overview?.localCuisine || "",
+        culturalEvents: wilaya.overview?.culturalEvents || "",
+        travelTips: wilaya.overview?.travelTips || "",
+      },
+      attractions: wilaya.attractions || [],
+    })
+    setShowForm(true)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!newWilaya.name || !newWilaya.description || !newWilaya.imageUrl) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs",
+        variant: "error",
+      })
+      return
+    }
+
+    try {
+      const url = editingId ? `/api/wilayas/${editingId}` : "/api/wilayas"
+      const method = editingId ? "PUT" : "POST"
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newWilaya),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || "Erreur lors de l'opération")
+      }
+
+      toast({
+        title: "Succès",
+        description: editingId ? "Wilaya mise à jour avec succès" : "Wilaya ajoutée avec succès",
+      })
+
+      setNewWilaya({
+        name: "",
+        description: "",
+        imageUrl: "",
+        overview: {
+          image: "",
+          description: "",
+          weather: "",
+          bestPeriod: "",
+          localCuisine: "",
+          culturalEvents: "",
+          travelTips: "",
+        },
+        attractions: [],
+      })
+      setNewAttraction({ name: "", description: "", image: "" })
+      setEditingId(null)
+      setShowForm(false)
+      fetchWilayas()
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: editingId ? "Impossible de mettre à jour la wilaya" : "Impossible d'ajouter la wilaya",
+        variant: "error",
+      })
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cette wilaya ?")) return
+
+    try {
+      const response = await fetch(`/api/wilayas/${id}`, {
+        method: "DELETE",
+      })
+
+      if (!response.ok) throw new Error("Erreur lors de la suppression")
+
+      toast({
+        title: "Succès",
+        description: "Wilaya supprimée avec succès",
+      })
+
+      fetchWilayas()
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer la wilaya",
+        variant: "error",
+      })
+    }
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto py-10">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestion des wilayas</h1>
-          <p className="text-gray-600">Gérez les wilayas et leurs contenus sur la plateforme Bladi</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors">
-          <Plus className="h-5 w-5" />
-          <span>Ajouter une wilaya</span>
-        </button>
+        <h1 className="text-2xl font-bold text-[#588157] mb-2">Gestion des wilayas</h1>
+        <Button 
+          onClick={() => {
+            setShowForm(true)
+            setEditingId(null)
+            setNewWilaya({
+              name: "",
+              description: "",
+              imageUrl: "",
+              overview: {
+                image: "",
+                description: "",
+                weather: "",
+                bestPeriod: "",
+                localCuisine: "",
+                culturalEvents: "",
+                travelTips: "",
+              },
+              attractions: [],
+            })
+          }}
+          className="bg-[#588157] hover:bg-[#3A5A40] text-white"
+        >
+          Ajouter une wilaya
+        </Button>
       </div>
 
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Rechercher une wilaya..."
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span>Filtres</span>
-          </button>
-          <select className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <option value="">Toutes les régions</option>
-            <option value="nord">Nord</option>
-            <option value="sud">Sud</option>
-            <option value="est">Est</option>
-            <option value="ouest">Ouest</option>
-            <option value="centre">Centre</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Cards des wilayas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentWilayas.map((wilaya) => (
-          <div key={wilaya.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="relative h-48">
-              <Image src={wilaya.image || "/placeholder.svg"} alt={wilaya.name} fill className="object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-              <div className="absolute bottom-0 left-0 p-4 text-white">
-                <h3 className="text-xl font-bold">{wilaya.name}</h3>
-                <div className="flex items-center">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{wilaya.region}</span>
-                </div>
-              </div>
-              <div className="absolute top-2 right-2">
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    wilaya.status === "Publié" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                  }`}
-                >
-                  {wilaya.status}
-                </span>
-              </div>
-            </div>
-            <div className="p-4">
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center">
-                  <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                  <span className="ml-1 font-medium">{wilaya.rating}</span>
-                </div>
-                <div className="flex gap-2">
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Eye className="h-5 w-5 text-gray-500" />
-                  </button>
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Edit className="h-5 w-5 text-blue-500" />
-                  </button>
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Trash2 className="h-5 w-5 text-red-500" />
-                  </button>
-                </div>
+                <h2 className="text-xl font-semibold text-[#344E41]">
+                  {editingId ? "Modifier la wilaya" : "Ajouter une wilaya"}
+                </h2>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="text-sm text-gray-500">Attractions</p>
-                  <p className="text-lg font-semibold">{wilaya.attractions}</p>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-md">
-                  <p className="text-sm text-gray-500">Activités</p>
-                  <p className="text-lg font-semibold">{wilaya.activities}</p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  placeholder="Nom de la wilaya"
+                  value={newWilaya.name}
+                  onChange={e => setNewWilaya({ ...newWilaya, name: e.target.value })}
+                />
+                <Textarea
+                  placeholder="Description"
+                  value={newWilaya.description}
+                  onChange={e => setNewWilaya({ ...newWilaya, description: e.target.value })}
+                  className="col-span-2"
+                />
+                <ImageUpload
+                  value={newWilaya.imageUrl}
+                  onChange={url => setNewWilaya({ ...newWilaya, imageUrl: url })}
+                />
               </div>
-            </div>
+              <h3 className="font-semibold mt-6 mb-2">Aperçu</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <ImageUpload
+                  value={newWilaya.overview.image}
+                  onChange={url => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, image: url } })}
+                />
+                <Textarea
+                  placeholder="Description de l'aperçu"
+                  value={newWilaya.overview.description}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, description: e.target.value } })}
+                />
+                <Input
+                  placeholder="Météo (ex: Ensoleillé 30°C)"
+                  value={newWilaya.overview.weather}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, weather: e.target.value } })}
+                />
+                <Input
+                  placeholder="Meilleure période (ex: Octobre à Mars)"
+                  value={newWilaya.overview.bestPeriod}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, bestPeriod: e.target.value } })}
+                />
+                <Input
+                  placeholder="Cuisine locale (ex: Méchoui, Tagella, Thé à la menthe)"
+                  value={newWilaya.overview.localCuisine}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, localCuisine: e.target.value } })}
+                />
+                <Input
+                  placeholder="Événements culturels (ex: Festival de l'Imzad, Sebiba de Djanet)"
+                  value={newWilaya.overview.culturalEvents}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, culturalEvents: e.target.value } })}
+                />
+                <Textarea
+                  placeholder="Conseils de voyage"
+                  value={newWilaya.overview.travelTips}
+                  onChange={e => setNewWilaya({ ...newWilaya, overview: { ...newWilaya.overview, travelTips: e.target.value } })}
+                  className="col-span-2"
+                />
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button type="submit" className="bg-[#588157] hover:bg-[#3A5A40] text-white">
+                  {editingId ? "Mettre à jour" : "Ajouter"}
+                </Button>
+              </div>
+            </form>
           </div>
-        ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 mb-4">
+        <Input
+          placeholder="Rechercher une wilaya..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm">
-        <div className="text-sm text-gray-500">
-          Affichage de {indexOfFirstWilaya + 1} à {Math.min(indexOfLastWilaya, filteredWilayas.length)} sur{" "}
-          {filteredWilayas.length} wilayas
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronLeft className="h-5 w-5 text-gray-500" />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === page ? "bg-[#588157] text-white" : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {wilayas.filter(w => w.name.toLowerCase().includes(search.toLowerCase())).map(wilaya => (
+          <Card key={wilaya._id} className="overflow-hidden h-[300px]">
+            <div className="relative h-40">
+              <Image
+                src={wilaya.imageUrl}
+                alt={wilaya.name}
+                fill
+                className="object-cover"
+              />
+            </div>
+            <CardHeader className="p-4">
+              <CardTitle className="text-lg">{wilaya.name}</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <p className="text-gray-600 text-sm line-clamp-2 mb-4">{wilaya.description}</p>
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => handleEdit(wilaya)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => handleDelete(wilaya._id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
     </div>
   )

@@ -1,0 +1,20 @@
+model Wilaya {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("wilayas")
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  wilayas     Wilaya[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+} 

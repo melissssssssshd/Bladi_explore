@@ -1,256 +1,337 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Filter, Plus, ChevronLeft, ChevronRight, Edit, Trash2, Eye, MapPin, Phone, Mail } from "lucide-react"
+import { useState, useEffect } from "react"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { ImageUpload } from "@/components/ui/image-upload"
+import { Plus, Eye, Pencil, Trash2, CheckCircle, XCircle, Filter } from "lucide-react"
 
-// Données fictives pour les partenaires
-const partnersData = [
-  {
-    id: 1,
-    name: "Hôtel El Djazaïr",
-    type: "Hébergement",
-    location: "Alger",
-    contact: "contact@eldjazair.com",
-    phone: "+213 123 456 789",
-    status: "Actif",
-    joinDate: "10/01/2023",
-  },
-  {
-    id: 2,
-    name: "Agence Sahara Tours",
-    type: "Agence de voyage",
-    location: "Tamanrasset",
-    contact: "info@saharatours.com",
-    phone: "+213 234 567 890",
-    status: "Actif",
-    joinDate: "15/01/2023",
-  },
-  {
-    id: 3,
-    name: "Restaurant Casbah",
-    type: "Restauration",
-    location: "Alger",
-    contact: "reservation@casbah.com",
-    phone: "+213 345 678 901",
-    status: "Inactif",
-    joinDate: "20/01/2023",
-  },
-  {
-    id: 4,
-    name: "Tassili Aventures",
-    type: "Guide touristique",
-    location: "Djanet",
-    contact: "info@tassiliaventures.com",
-    phone: "+213 456 789 012",
-    status: "Actif",
-    joinDate: "25/01/2023",
-  },
-  {
-    id: 5,
-    name: "Hôtel Les Zianides",
-    type: "Hébergement",
-    location: "Tlemcen",
-    contact: "reservation@zianides.com",
-    phone: "+213 567 890 123",
-    status: "Actif",
-    joinDate: "01/02/2023",
-  },
-  {
-    id: 6,
-    name: "Bejaia Découverte",
-    type: "Guide touristique",
-    location: "Béjaïa",
-    contact: "contact@bejaiadécouverte.com",
-    phone: "+213 678 901 234",
-    status: "Actif",
-    joinDate: "05/02/2023",
-  },
-  {
-    id: 7,
-    name: "Restaurant Hoggar",
-    type: "Restauration",
-    location: "Tamanrasset",
-    contact: "info@hoggar-restaurant.com",
-    phone: "+213 789 012 345",
-    status: "Inactif",
-    joinDate: "10/02/2023",
-  },
-  {
-    id: 8,
-    name: "Oran City Tours",
-    type: "Agence de voyage",
-    location: "Oran",
-    contact: "contact@orancitytours.com",
-    phone: "+213 890 123 456",
-    status: "Actif",
-    joinDate: "15/02/2023",
-  },
+interface Wilaya {
+  _id: string
+  name: string
+}
+
+interface Partner {
+  _id: string
+  name: string
+  type: string
+  status: string
+  city: string
+  wilayaId: string
+  email: string
+  phone: string
+  website: string
+  address: string
+  description: string
+  image: string
+  services: string[]
+  priceRange: string
+  rating: number | null
+  reviews: number | null
+  createdAt: string
+  updatedAt: string
+}
+
+const PARTNER_TYPES = [
+  "Hébergement",
+  "Agence de voyage",
+  "Restauration",
+  "Guide touristique",
 ]
+const STATUS = ["Actif", "Inactif"]
+const PRICE_RANGE = ["Modéré", "Élevé", "Abordable", "Luxueux"]
 
-export default function PartnersPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedPartners, setSelectedPartners] = useState<number[]>([])
-  const itemsPerPage = 6
+export default function AdminPartners() {
+  const [partners, setPartners] = useState<Partner[]>([])
+  const [wilayas, setWilayas] = useState<Wilaya[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [search, setSearch] = useState("")
+  const [filterType, setFilterType] = useState("")
+  const [newPartner, setNewPartner] = useState({
+    name: "",
+    type: "",
+    status: "Actif",
+    city: "",
+    wilayaId: "",
+    email: "",
+    phone: "",
+    website: "",
+    address: "",
+    description: "",
+    image: "",
+    services: [] as string[],
+    priceRange: "",
+    rating: null as number | null,
+    reviews: null as number | null,
+  })
+  const [serviceInput, setServiceInput] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  // Filtrer les partenaires en fonction du terme de recherche
-  const filteredPartners = partnersData.filter(
-    (partner) =>
-      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      partner.location.toLowerCase().includes(searchTerm.toLowerCase()),
+  useEffect(() => {
+    fetchPartners()
+    fetchWilayas()
+  }, [])
+
+  const fetchPartners = async () => {
+    const res = await fetch("/api/partners")
+    const data = await res.json()
+    setPartners(data)
+  }
+  const fetchWilayas = async () => {
+    const res = await fetch("/api/wilayas")
+    const data = await res.json()
+    setWilayas(data)
+  }
+
+  const handleAddPartner = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newPartner.name || !newPartner.type || !newPartner.wilayaId) return alert("Nom, type et wilaya sont requis")
+    setLoading(true)
+    const res = await fetch("/api/partners", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPartner),
+    })
+    setLoading(false)
+    if (res.ok) {
+      setShowForm(false)
+      setNewPartner({
+        name: "",
+        type: "",
+        status: "Actif",
+        city: "",
+        wilayaId: "",
+        email: "",
+        phone: "",
+        website: "",
+        address: "",
+        description: "",
+        image: "",
+        services: [],
+        priceRange: "",
+        rating: null,
+        reviews: null,
+      })
+      fetchPartners()
+    } else {
+      alert("Erreur lors de l'ajout")
+    }
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer ce partenaire ?")) return
+    await fetch(`/api/partners/${id}`, { method: "DELETE" })
+    fetchPartners()
+  }
+
+  const filteredPartners = partners.filter(p =>
+    (p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.city.toLowerCase().includes(search.toLowerCase()) ||
+      p.email.toLowerCase().includes(search.toLowerCase())) &&
+    (!filterType || p.type === filterType)
   )
 
-  // Pagination
-  const indexOfLastPartner = currentPage * itemsPerPage
-  const indexOfFirstPartner = indexOfLastPartner - itemsPerPage
-  const currentPartners = filteredPartners.slice(indexOfFirstPartner, indexOfLastPartner)
-  const totalPages = Math.ceil(filteredPartners.length / itemsPerPage)
-
-  // Gestion des sélections
-  const toggleSelectAll = () => {
-    if (selectedPartners.length === currentPartners.length) {
-      setSelectedPartners([])
-    } else {
-      setSelectedPartners(currentPartners.map((partner) => partner.id))
-    }
-  }
-
-  const toggleSelectPartner = (partnerId: number) => {
-    if (selectedPartners.includes(partnerId)) {
-      setSelectedPartners(selectedPartners.filter((id) => id !== partnerId))
-    } else {
-      setSelectedPartners([...selectedPartners, partnerId])
-    }
-  }
-
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="max-w-7xl mx-auto py-10 px-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestion des partenaires</h1>
+          <h1 className="text-2xl font-bold text-[#588157]">Gestion des partenaires</h1>
           <p className="text-gray-600">Gérez les partenaires de la plateforme Bladi</p>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors">
-          <Plus className="h-5 w-5" />
-          <span>Ajouter un partenaire</span>
-        </button>
+        <Button className="bg-[#588157] hover:bg-[#3A5A40] text-white px-6 py-2 rounded-lg" onClick={() => setShowForm(true)}>
+          <Plus className="h-5 w-5 mr-2" /> Ajouter un partenaire
+        </Button>
       </div>
-
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Rechercher un partenaire..."
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span>Filtres</span>
-          </button>
-          <button className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            Exporter
-          </button>
-        </div>
+      <div className="flex flex-col md:flex-row gap-4 mb-6 items-center">
+        <Input
+          placeholder="Rechercher un partenaire..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <select
+          className="border rounded p-2"
+          value={filterType}
+          onChange={e => setFilterType(e.target.value)}
+        >
+          <option value="">Tous les types</option>
+          {PARTNER_TYPES.map(t => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <Button variant="outline" className="flex gap-2 items-center">
+          <Filter className="h-4 w-4" /> Filtres
+        </Button>
       </div>
-
-      {/* Cards des partenaires */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {currentPartners.map((partner) => (
-          <div key={partner.id} className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex items-center">
-                  <div className="h-12 w-12 rounded-full bg-[#588157] flex items-center justify-center text-white">
-                    <span>{partner.name.charAt(0)}</span>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-lg font-semibold text-gray-900">{partner.name}</h3>
-                    <p className="text-sm text-gray-500">{partner.type}</p>
-                  </div>
-                </div>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    partner.status === "Actif" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {partner.status}
-                </span>
+      {/* Cards partenaires */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {filteredPartners.map(partner => (
+          <div key={partner._id} className="bg-white rounded-xl shadow p-6 flex flex-col gap-2 relative border">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="w-12 h-12 rounded-full bg-[#DAD7CD] flex items-center justify-center text-2xl font-bold text-[#344E41]">
+                {partner.name[0]}
               </div>
-
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center text-gray-600">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  <span>{partner.location}</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-bold text-lg text-[#344E41]">{partner.name}</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ml-2 ${partner.status === "Actif" ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-500"}`}>{partner.status}</span>
                 </div>
-                <div className="flex items-center text-gray-600">
-                  <Mail className="h-4 w-4 mr-2" />
-                  <span>{partner.contact}</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Phone className="h-4 w-4 mr-2" />
-                  <span>{partner.phone}</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                <span className="text-xs text-gray-500">Depuis le {partner.joinDate}</span>
-                <div className="flex gap-2">
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Eye className="h-5 w-5 text-gray-500" />
-                  </button>
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Edit className="h-5 w-5 text-blue-500" />
-                  </button>
-                  <button className="p-1 rounded-md hover:bg-gray-100">
-                    <Trash2 className="h-5 w-5 text-red-500" />
-                  </button>
-                </div>
+                <div className="text-sm text-gray-500">{partner.type}</div>
               </div>
             </div>
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <span>{partner.city}</span>
+            </div>
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <span>{partner.email}</span>
+            </div>
+            <div className="text-sm text-gray-600 flex items-center gap-2">
+              <span>{partner.phone}</span>
+            </div>
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="icon" className="hover:bg-[#E9ECE5]" title="Voir (à venir)"><Eye className="h-4 w-4 text-[#588157]" /></Button>
+              <Button variant="outline" size="icon" className="hover:bg-[#E9ECE5]" title="Modifier (à venir)"><Pencil className="h-4 w-4 text-[#588157]" /></Button>
+              <Button variant="destructive" size="icon" onClick={() => handleDelete(partner._id)} title="Supprimer"><Trash2 className="h-4 w-4" /></Button>
+            </div>
+            <div className="text-xs text-gray-400 mt-2">Depuis le {new Date(partner.createdAt).toLocaleDateString()}</div>
           </div>
         ))}
       </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between px-6 py-3 bg-white rounded-lg shadow-sm">
-        <div className="text-sm text-gray-500">
-          Affichage de {indexOfFirstPartner + 1} à {Math.min(indexOfLastPartner, filteredPartners.length)} sur{" "}
-          {filteredPartners.length} partenaires
+      {/* Modal ajout partenaire */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl relative max-h-[80vh] overflow-y-auto p-8">
+            <button className="absolute top-4 right-4" onClick={() => setShowForm(false)}><XCircle className="h-6 w-6 text-gray-400 hover:text-gray-600" /></button>
+            <h2 className="text-xl font-bold mb-6 text-[#344E41]">Ajouter un partenaire</h2>
+            <form onSubmit={handleAddPartner} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  placeholder="Nom du partenaire"
+                  value={newPartner.name}
+                  onChange={e => setNewPartner({ ...newPartner, name: e.target.value })}
+                  required
+                />
+                <select
+                  className="w-full border rounded p-2"
+                  value={newPartner.type}
+                  onChange={e => setNewPartner({ ...newPartner, type: e.target.value })}
+                  required
+                >
+                  <option value="">Type</option>
+                  {PARTNER_TYPES.map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full border rounded p-2"
+                  value={newPartner.status}
+                  onChange={e => setNewPartner({ ...newPartner, status: e.target.value })}
+                >
+                  {STATUS.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+                <select
+                  className="w-full border rounded p-2"
+                  value={newPartner.wilayaId}
+                  onChange={e => setNewPartner({ ...newPartner, wilayaId: e.target.value })}
+                  required
+                >
+                  <option value="">Wilaya</option>
+                  {wilayas.map(w => (
+                    <option key={w._id} value={w._id}>{w.name}</option>
+                  ))}
+                </select>
+                <Input
+                  placeholder="Ville"
+                  value={newPartner.city}
+                  onChange={e => setNewPartner({ ...newPartner, city: e.target.value })}
+                />
+                <Input
+                  placeholder="Adresse"
+                  value={newPartner.address}
+                  onChange={e => setNewPartner({ ...newPartner, address: e.target.value })}
+                />
+                <Input
+                  placeholder="Email"
+                  value={newPartner.email}
+                  onChange={e => setNewPartner({ ...newPartner, email: e.target.value })}
+                />
+                <Input
+                  placeholder="Téléphone"
+                  value={newPartner.phone}
+                  onChange={e => setNewPartner({ ...newPartner, phone: e.target.value })}
+                />
+                <Input
+                  placeholder="Site web"
+                  value={newPartner.website}
+                  onChange={e => setNewPartner({ ...newPartner, website: e.target.value })}
+                />
+                <ImageUpload
+                  value={newPartner.image}
+                  onChange={url => setNewPartner({ ...newPartner, image: url })}
+                />
+                <Textarea
+                  placeholder="Description"
+                  value={newPartner.description}
+                  onChange={e => setNewPartner({ ...newPartner, description: e.target.value })}
+                  className="col-span-2"
+                />
+                <Input
+                  placeholder="Gamme de prix (ex: Modéré, Élevé)"
+                  value={newPartner.priceRange}
+                  onChange={e => setNewPartner({ ...newPartner, priceRange: e.target.value })}
+                />
+                <Input
+                  placeholder="Note (ex: 4.5)"
+                  type="number"
+                  step="0.1"
+                  value={newPartner.rating ?? ""}
+                  onChange={e => setNewPartner({ ...newPartner, rating: e.target.value ? parseFloat(e.target.value) : null })}
+                />
+                <Input
+                  placeholder="Nombre d'avis"
+                  type="number"
+                  value={newPartner.reviews ?? ""}
+                  onChange={e => setNewPartner({ ...newPartner, reviews: e.target.value ? parseInt(e.target.value) : null })}
+                />
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium mb-1">Services proposés</label>
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      placeholder="Ajouter un service"
+                      value={serviceInput}
+                      onChange={e => setServiceInput(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button type="button" onClick={() => {
+                      if (serviceInput.trim()) {
+                        setNewPartner({ ...newPartner, services: [...newPartner.services, serviceInput.trim()] })
+                        setServiceInput("")
+                      }
+                    }}>Ajouter</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {newPartner.services.map((s, idx) => (
+                      <span key={idx} className="bg-[#E9ECE5] px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                        {s}
+                        <button type="button" onClick={() => setNewPartner({ ...newPartner, services: newPartner.services.filter((_, i) => i !== idx) })}>
+                          <XCircle className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button type="submit" className="bg-[#588157] hover:bg-[#3A5A40] text-white px-8 py-2 rounded-lg shadow">Ajouter</Button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronLeft className="h-5 w-5 text-gray-500" />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === page ? "bg-[#588157] text-white" : "text-gray-500 hover:bg-gray-100"
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-            className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-          >
-            <ChevronRight className="h-5 w-5 text-gray-500" />
-          </button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }

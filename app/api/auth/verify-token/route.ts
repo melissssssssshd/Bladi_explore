@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+/*import { NextRequest, NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
@@ -73,6 +73,92 @@ export async function POST(req: NextRequest) {
         },
         { status: 200 }
       );
+    } catch (error) {
+      console.error("❌ Erreur lors de la vérification du token:", error);
+      return NextResponse.json({ valid: false }, { status: 401 });
+    }
+  } catch (error) {
+    console.error("❌ Erreur de vérification du token:", error);
+    return NextResponse.json({ valid: false }, { status: 500 });
+  }
+}*/
+import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+import clientPromise from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
+
+export async function POST(req: NextRequest) {
+  try {
+    console.log("🔵 ===== DÉBUT DE LA VÉRIFICATION DU TOKEN =====");
+    const authHeader = req.headers.get("authorization");
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.log("❌ En-tête d'autorisation manquant ou invalide");
+      return NextResponse.json({ valid: false }, { status: 401 });
+    }
+
+    const token = authHeader.split(" ")[1];
+    console.log("🔑 Token reçu");
+
+    if (!token) {
+      console.log("❌ Token manquant");
+      return NextResponse.json({ valid: false }, { status: 401 });
+    }
+
+    try {
+      // Vérification de la présence du secret JWT
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined in the environment variables.");
+      }
+
+      // Vérification unique du token
+      console.log("🔍 Vérification du token...");
+      const decoded = jwt.verify(token, process.env.JWT_SECRET) as {
+        userId: string;
+        role: string;
+      };
+
+      console.log("📦 Token décodé:", {
+        userId: decoded.userId,
+        role: decoded.role,
+      });
+
+      // Connexion à la base de données
+      console.log("🔌 Connexion à la base de données...");
+      const client = await clientPromise;
+      const db = client.db("bladi-tourisme");
+      const users = db.collection("users");
+      console.log("✅ Base de données connectée");
+
+      // Recherche de l'utilisateur
+      const userId = new ObjectId(decoded.userId);
+      console.log("🔍 Recherche de l'utilisateur avec l'ID:", userId);
+
+      const user = await users.findOne({ _id: userId });
+      console.log("📦 Utilisateur trouvé:", {
+        id: user?._id,
+        email: user?.email,
+        role: user?.role,
+      });
+
+      if (!user) {
+        console.log("❌ Utilisateur non trouvé dans la base de données");
+        return NextResponse.json({ valid: false }, { status: 401 });
+      }
+
+      // Récupération du rôle
+      const userRole = user.role || "user";
+      console.log("✅ Rôle de l'utilisateur:", userRole);
+
+      console.log("✅ Token valide, rôle de l'utilisateur:", userRole);
+      console.log("📤 Envoi de la réponse avec le rôle:", userRole);
+      console.log("✅ ===== FIN DE LA VÉRIFICATION DU TOKEN =====");
+
+      return NextResponse.json(
+        { valid: true, role: userRole },
+        { status: 200 }
+      );
+
     } catch (error) {
       console.error("❌ Erreur lors de la vérification du token:", error);
       return NextResponse.json({ valid: false }, { status: 401 });

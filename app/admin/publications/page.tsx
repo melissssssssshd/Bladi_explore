@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import {
   Search,
@@ -15,337 +15,208 @@ import {
   User,
   MessageSquare,
   Heart,
+  Pencil,
+  X,
 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { MultiImageUpload } from "@/components/ui/image-upload"
 
-// Données fictives pour les publications
-const publicationsData = [
-  {
-    id: 1,
-    title: "Les plages cachées de Béjaïa",
-    excerpt: "Découvrez les criques secrètes et les plages paradisiaques de la région de Béjaïa...",
-    author: "Ahmed Benali",
-    date: "12/05/2023",
-    image: "/images/plage-sidi-merouane.jpeg",
-    likes: 245,
-    comments: 32,
-    status: "Publié",
-  },
-  {
-    id: 2,
-    title: "Guide de randonnée dans le Hoggar",
-    excerpt: "Tout ce que vous devez savoir pour préparer votre trek dans le massif du Hoggar...",
-    author: "Karim Hadj",
-    date: "10/05/2023",
-    image: "/images/tassili.jpeg",
-    likes: 189,
-    comments: 24,
-    status: "Publié",
-  },
-  {
-    id: 3,
-    title: "Les meilleurs restaurants d'Alger",
-    excerpt: "Notre sélection des meilleures adresses pour déguster la cuisine algérienne traditionnelle...",
-    author: "Fatima Zahra",
-    date: "08/05/2023",
-    image: "/images/casbah.jpeg",
-    likes: 312,
-    comments: 45,
-    status: "En attente",
-  },
-  {
-    id: 4,
-    title: "Découverte de la Casbah",
-    excerpt: "Visite guidée de ce quartier historique d'Alger classé au patrimoine mondial de l'UNESCO...",
-    author: "Amina Khelif",
-    date: "05/05/2023",
-    image: "/images/casbah.jpeg",
-    likes: 178,
-    comments: 19,
-    status: "Publié",
-  },
-  {
-    id: 5,
-    title: "Les oasis du Sud algérien",
-    excerpt: "Un voyage à travers les plus belles oasis du Sahara algérien...",
-    author: "Mohammed Saïd",
-    date: "03/05/2023",
-    image: "/images/tassili.jpeg",
-    likes: 203,
-    comments: 27,
-    status: "En attente",
-  },
-  {
-    id: 6,
-    title: "Week-end à Oran",
-    excerpt: "Que faire et que voir lors d'un court séjour dans la ville d'Oran...",
-    author: "Leila Bensalem",
-    date: "01/05/2023",
-    image: "/images/skikda.jpeg",
-    likes: 156,
-    comments: 18,
-    status: "Publié",
-  },
-  {
-    id: 7,
-    title: "Les traditions du M'Zab",
-    excerpt: "Immersion dans la culture et les traditions de la vallée du M'Zab...",
-    author: "Omar Ferhat",
-    date: "28/04/2023",
-    image: "/images/jardin-essai.jpeg",
-    likes: 134,
-    comments: 15,
-    status: "Brouillon",
-  },
-  {
-    id: 8,
-    title: "Artisanat de Kabylie",
-    excerpt: "À la découverte des artisans et des savoir-faire traditionnels de Kabylie...",
-    author: "Samira Messaoudi",
-    date: "25/04/2023",
-    image: "/images/plage-sidi-merouane.jpeg",
-    likes: 167,
-    comments: 21,
-    status: "Publié",
-  },
-]
+interface Wilaya {
+  _id: string
+  name: string
+}
+
+interface Attraction {
+  _id: string
+  name: string
+  description: string
+  images: string[]
+  wilayaId: string
+}
 
 export default function PublicationsPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [selectedPublications, setSelectedPublications] = useState<number[]>([])
-  const [statusFilter, setStatusFilter] = useState("all")
-  const itemsPerPage = 6
+  const [attractions, setAttractions] = useState<Attraction[]>([])
+  const [wilayas, setWilayas] = useState<Wilaya[]>([])
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [newAttraction, setNewAttraction] = useState({
+    name: "",
+    description: "",
+    images: [] as string[],
+    wilayaId: "",
+  })
+  const [loading, setLoading] = useState(false)
 
-  // Filtrer les publications en fonction du terme de recherche et du statut
-  const filteredPublications = publicationsData.filter(
-    (publication) =>
-      (publication.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        publication.author.toLowerCase().includes(searchTerm.toLowerCase())) &&
-      (statusFilter === "all" || publication.status.toLowerCase() === statusFilter.toLowerCase()),
-  )
+  useEffect(() => {
+    fetchAttractions()
+    fetchWilayas()
+  }, [])
 
-  // Pagination
-  const indexOfLastPublication = currentPage * itemsPerPage
-  const indexOfFirstPublication = indexOfLastPublication - itemsPerPage
-  const currentPublications = filteredPublications.slice(indexOfFirstPublication, indexOfLastPublication)
-  const totalPages = Math.ceil(filteredPublications.length / itemsPerPage)
+  const fetchAttractions = async () => {
+    const res = await fetch("/api/attractions")
+    const data = await res.json()
+    setAttractions(data)
+  }
+  const fetchWilayas = async () => {
+    const res = await fetch("/api/wilayas")
+    const data = await res.json()
+    setWilayas(data)
+  }
 
-  // Gestion des sélections
-  const toggleSelectAll = () => {
-    if (selectedPublications.length === currentPublications.length) {
-      setSelectedPublications([])
+  const handleEdit = (attraction: Attraction) => {
+    setEditingId(attraction._id)
+    setNewAttraction({
+      name: attraction.name,
+      description: attraction.description,
+      images: attraction.images,
+      wilayaId: attraction.wilayaId,
+    })
+    setShowForm(true)
+  }
+
+  const handleAddAttraction = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newAttraction.name || !newAttraction.description || newAttraction.images.length === 0 || !newAttraction.wilayaId) return alert("Tous les champs sont requis")
+    setLoading(true)
+    const url = editingId ? `/api/attractions/${editingId}` : "/api/attractions"
+    const method = editingId ? "PUT" : "POST"
+    
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newAttraction),
+    })
+    setLoading(false)
+    if (res.ok) {
+      setNewAttraction({ name: "", description: "", images: [], wilayaId: "" })
+      setEditingId(null)
+      setShowForm(false)
+      fetchAttractions()
     } else {
-      setSelectedPublications(currentPublications.map((publication) => publication.id))
+      alert("Erreur lors de l'opération")
     }
   }
 
-  const toggleSelectPublication = (publicationId: number) => {
-    if (selectedPublications.includes(publicationId)) {
-      setSelectedPublications(selectedPublications.filter((id) => id !== publicationId))
-    } else {
-      setSelectedPublications([...selectedPublications, publicationId])
-    }
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cette attraction ?")) return
+    await fetch(`/api/attractions/${id}`, { method: "DELETE" })
+    fetchAttractions()
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-7xl mx-auto py-10">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestion des publications</h1>
-          <p className="text-gray-600">Gérez les publications et les contenus sur la plateforme Bladi</p>
-        </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors">
-          <Plus className="h-5 w-5" />
-          <span>Créer une publication</span>
-        </button>
+        <h1 className="text-2xl font-bold text-[#588157] mb-2">Gestion des attractions</h1>
+        <Button 
+          onClick={() => {
+            setShowForm(true)
+            setEditingId(null)
+            setNewAttraction({
+              name: "",
+              description: "",
+              images: [],
+              wilayaId: "",
+            })
+          }}
+          className="bg-[#588157] hover:bg-[#3A5A40] text-white"
+        >
+          Ajouter une attraction
+        </Button>
       </div>
 
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Rechercher une publication..."
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleAddAttraction} className="space-y-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-semibold text-[#344E41]">
+                  {editingId ? "Modifier l'attraction" : "Ajouter une attraction"}
+                </h2>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon"
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  placeholder="Nom de l'attraction"
+                  value={newAttraction.name}
+                  onChange={e => setNewAttraction({ ...newAttraction, name: e.target.value })}
+                />
+                <select
+                  className="w-full border rounded p-2"
+                  value={newAttraction.wilayaId}
+                  onChange={e => setNewAttraction({ ...newAttraction, wilayaId: e.target.value })}
+                  required
+                >
+                  <option value="">Sélectionner une wilaya</option>
+                  {wilayas.map(w => (
+                    <option key={w._id} value={w._id}>{w.name}</option>
+                  ))}
+                </select>
+                <Textarea
+                  placeholder="Description"
+                  value={newAttraction.description}
+                  onChange={e => setNewAttraction({ ...newAttraction, description: e.target.value })}
+                  className="col-span-2"
+                />
+                <MultiImageUpload
+                  value={newAttraction.images}
+                  onChange={urls => setNewAttraction({ ...newAttraction, images: urls })}
+                />
+              </div>
+              <div className="flex justify-end gap-4">
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowForm(false)
+                    setEditingId(null)
+                  }}
+                >
+                  Annuler
+                </Button>
+                <Button type="submit" disabled={loading} className="bg-[#588157] hover:bg-[#3A5A40] text-white">
+                  {loading ? "Chargement..." : editingId ? "Mettre à jour" : "Ajouter"}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span>Filtres</span>
-          </button>
-          <select
-            className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="all">Tous les statuts</option>
-            <option value="publié">Publié</option>
-            <option value="en attente">En attente</option>
-            <option value="brouillon">Brouillon</option>
-          </select>
-        </div>
-      </div>
+      )}
 
-      {/* Table des publications */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                      checked={
-                        selectedPublications.length === currentPublications.length && currentPublications.length > 0
-                      }
-                      onChange={toggleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Publication
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Auteur
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Engagement
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {currentPublications.map((publication) => (
-                <tr key={publication.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                        checked={selectedPublications.includes(publication.id)}
-                        onChange={() => toggleSelectPublication(publication.id)}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="h-12 w-12 flex-shrink-0 rounded-md overflow-hidden">
-                        <Image
-                          src={publication.image || "/placeholder.svg"}
-                          alt={publication.title}
-                          width={48}
-                          height={48}
-                          className="h-full w-full object-cover"
-                        />
-                      </div>
-                      <div className="ml-4">
-                        <div className="font-medium text-gray-900">{publication.title}</div>
-                        <div className="text-sm text-gray-500 line-clamp-1">{publication.excerpt}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <User className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-gray-600">{publication.author}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 text-gray-500 mr-2" />
-                      <span className="text-gray-600">{publication.date}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center">
-                        <Heart className="h-4 w-4 text-red-500 mr-1" />
-                        <span className="text-gray-600">{publication.likes}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <MessageSquare className="h-4 w-4 text-blue-500 mr-1" />
-                        <span className="text-gray-600">{publication.comments}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        publication.status === "Publié"
-                          ? "bg-green-100 text-green-800"
-                          : publication.status === "En attente"
-                            ? "bg-yellow-100 text-yellow-800"
-                            : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {publication.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex justify-end gap-2">
-                      <button className="p-1 rounded-md hover:bg-gray-100">
-                        <Eye className="h-5 w-5 text-gray-500" />
-                      </button>
-                      <button className="p-1 rounded-md hover:bg-gray-100">
-                        <Edit className="h-5 w-5 text-blue-500" />
-                      </button>
-                      <button className="p-1 rounded-md hover:bg-gray-100">
-                        <Trash2 className="h-5 w-5 text-red-500" />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {attractions.map(attr => (
+          <div key={attr._id} className="bg-[#F6F7F2] border rounded-xl p-4 flex flex-col shadow hover:shadow-lg transition h-[300px]">
+            <div className="flex gap-2 mb-2 flex-wrap">
+              {(attr.images || []).map((img: string, idx: number) => (
+                <div key={idx} className="relative w-16 h-16 rounded overflow-hidden border">
+                  <Image src={img} alt={`Image ${idx + 1}`} fill className="object-cover" />
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
-          <div className="text-sm text-gray-500">
-            Affichage de {indexOfFirstPublication + 1} à {Math.min(indexOfLastPublication, filteredPublications.length)}{" "}
-            sur {filteredPublications.length} publications
+            </div>
+            <div className="font-bold text-lg mb-1 text-[#344E41]">{attr.name}</div>
+            <div className="text-gray-600 mb-2 flex-1 line-clamp-2">{attr.description}</div>
+            <div className="text-sm text-gray-500 mb-2">Wilaya : {wilayas.find(w => w._id === attr.wilayaId)?.name || "-"}</div>
+            <div className="flex gap-2 mt-2">
+              <Button variant="outline" size="icon" onClick={() => handleEdit(attr)} title="Modifier">
+                <Pencil className="h-4 w-4 text-[#588157]" />
+              </Button>
+              <Button variant="destructive" size="icon" onClick={() => handleDelete(attr._id)} title="Supprimer">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronLeft className="h-5 w-5 text-gray-500" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === page ? "bg-[#588157] text-white" : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronRight className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
-        </div>
+        ))}
       </div>
     </div>
   )

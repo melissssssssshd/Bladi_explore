@@ -1,93 +1,125 @@
 "use client"
 
-import { Sidebar } from "@/components/sidebar"
-import { Header } from "@/components/header"
-import Image from "next/image"
-import Link from "next/link"
-import { MapPin, Heart, ChevronRight } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import Image from "next/image";
+import Link from "next/link";
+import { Sidebar } from "@/components/sidebar";
+import { Star, Share2, Heart } from "lucide-react";
 
-const favoris = [
-  {
-    id: 1,
-    type: "destination",
-    name: "Tamanrasset",
-    location: "Hoggar, Sud de l'Algérie",
-    image: "/images/tassili.jpeg",
-    description:
-      "Abritant le massif du Hoggar, Tamanrasset est une destination incontournable pour les amateurs de désert.",
-  },
-  {
-    id: 2,
-    type: "destination",
-    name: "Plage de Sidi Merouane",
-    location: "Cap Ténès, Chlef",
-    image: "/images/plage-sidi-merouane.jpeg",
-    description: "Une plage paradisiaque aux eaux cristallines turquoise entourée de falaises majestueuses.",
-  },
-  {
-    id: 3,
-    type: "experience",
-    name: "Randonnée dans le Hoggar",
-    location: "Tamanrasset",
-    image: "/images/tassili.jpeg",
-    description: "Une expérience unique pour découvrir les paysages lunaires du massif du Hoggar.",
-  },
-  {
-    id: 4,
-    type: "destination",
-    name: "La Casbah d'Alger",
-    location: "Alger",
-    image: "/images/casbah.jpeg",
-    description:
-      "Un quartier historique classé au patrimoine mondial de l'UNESCO avec ses ruelles étroites et son architecture traditionnelle.",
-  },
-]
+interface Wilaya {
+  _id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  region?: string;
+  rating?: number;
+  isPopular?: boolean;
+}
+
+const regionMap: Record<string, string> = {
+  "Alger": "Centre-Nord",
+  "Oran": "Nord-Ouest",
+  "Béjaïa": "Kabylie",
+};
+const ratingMap: Record<string, number> = {
+  "Alger": 4.8,
+  "Oran": 4.7,
+  "Béjaïa": 4.8,
+};
+const popularWilayas = ["Alger", "Oran", "Béjaïa"];
 
 export default function FavorisPage() {
-  return (
-    <div className="min-h-screen bg-[#DAD7CD]/20 flex">
-      <Sidebar />
-      <main className="ml-64 flex-1 p-8">
-        <Header title="Favoris" subtitle="Vos destinations et expériences préférées" />
+  const [wilayas, setWilayas] = useState<Wilaya[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
+  const { toast } = useToast();
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {favoris.map((favori) => (
-            <div
-              key={favori.id}
-              className="bg-white rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow"
-            >
-              <div className="flex flex-col md:flex-row h-full">
-                <div className="relative w-full md:w-2/5 h-48 md:h-auto">
-                  <Image src={favori.image || "/placeholder.svg"} alt={favori.name} fill className="object-cover" />
-                  <button className="absolute top-2 right-2 p-2 bg-white/80 rounded-full hover:bg-white transition-colors">
-                    <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-                  </button>
-                </div>
-                <div className="p-6 flex-1">
-                  <div className="flex items-center mb-2">
-                    <MapPin className="h-4 w-4 text-[#588157] mr-1" />
-                    <span className="text-sm text-gray-600">{favori.location}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-[#344E41] mb-2">{favori.name}</h3>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{favori.description}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-500 px-2 py-1 bg-gray-100 rounded-full">
-                      {favori.type === "destination" ? "Destination" : "Expérience"}
+  useEffect(() => {
+    const favs = localStorage.getItem("wilaya_favorites");
+    if (favs) setFavorites(JSON.parse(favs));
+    fetchWilayas();
+  }, []);
+
+  const fetchWilayas = async () => {
+    try {
+      const response = await fetch("/api/wilayas");
+      let data = await response.json();
+      data = data.map((w: Wilaya) => ({
+        ...w,
+        region: regionMap[w.name] || "",
+        rating: ratingMap[w.name] || 4.5,
+        isPopular: popularWilayas.includes(w.name),
+      }));
+      setWilayas(data);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les wilayas",
+        variant: "error",
+      });
+    }
+  };
+
+  const favoriteWilayas = wilayas.filter((w) => favorites.includes(w._id));
+
+  return (
+    <div className="flex min-h-screen">
+      <Sidebar />
+      <main className="flex-1 ml-64">
+        <div className="p-8">
+          <h1 className="text-4xl font-bold mb-8 text-[#588157]">Mes Favoris</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {favoriteWilayas.map((wilaya) => (
+              <Card
+                key={wilaya._id}
+                className="h-full flex flex-col rounded-2xl shadow-lg overflow-hidden relative bg-white"
+              >
+                <div className="relative h-48">
+                  <Image
+                    src={wilaya.imageUrl}
+                    alt={wilaya.name}
+                    fill
+                    className="object-cover w-full h-full"
+                  />
+                  {wilaya.isPopular && (
+                    <span className="absolute top-3 left-3 bg-green-700 text-white text-xs font-semibold px-3 py-1 rounded-lg shadow">
+                      Populaire
                     </span>
-                    <Link
-                      href={`/${favori.type}/${favori.id}`}
-                      className="text-[#588157] hover:text-[#3A5A40] font-medium flex items-center"
-                    >
-                      Explorer
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Link>
+                  )}
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <button className="bg-white/80 hover:bg-white p-2 rounded-full shadow transition">
+                      <Share2 className="h-4 w-4 text-gray-700" />
+                    </button>
+                    <button className="bg-white/80 p-2 rounded-full shadow text-red-500" disabled>
+                      <Heart className="h-4 w-4 fill-red-500" />
+                    </button>
                   </div>
                 </div>
-              </div>
+                <CardContent className="flex-1 flex flex-col p-6">
+                  <div className="flex items-center gap-1 mb-2">
+                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-400" />
+                    <span className="font-semibold text-gray-800 text-sm">{wilaya.rating?.toFixed(1)}</span>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-1">{wilaya.name}</h2>
+                  <div className="text-sm text-gray-500 mb-2">{wilaya.region}</div>
+                  <p className="text-gray-700 mb-4 line-clamp-2 flex-1">{wilaya.description}</p>
+                  <Link href={`/explorer/wilaya/${wilaya._id}`} className="mt-auto">
+                    <button className="bg-[#588157] hover:bg-[#3A5A40] text-white font-semibold px-6 py-2 rounded-lg transition w-full">
+                      Explorer
+                    </button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          {favoriteWilayas.length === 0 && (
+            <div className="text-center py-16">
+              <p className="text-gray-500 text-lg">Aucun favori pour le moment.</p>
             </div>
-          ))}
+          )}
         </div>
       </main>
     </div>
-  )
+  );
 }

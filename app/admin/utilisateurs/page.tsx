@@ -1,419 +1,221 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Filter, Plus, ChevronLeft, ChevronRight, Edit, Trash2, Eye } from "lucide-react"
-import Link from "next/link"
+import { useState, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Pencil, Trash2, Eye, Plus, Filter } from "lucide-react"
 
-// Données fictives pour les utilisateurs avec plus d'informations
-const usersData = [
-  {
-    id: 1,
-    firstName: "Ahmed",
-    lastName: "Benali",
-    email: "ahmed.benali@example.com",
-    phone: "+213 123 456 789",
-    role: "Utilisateur",
-    status: "Actif",
-    joinDate: "12/04/2023",
-    address: "123 Rue des Oliviers, Alger",
-    bio: "Passionné de voyages et de découvertes culturelles",
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: 2,
-    firstName: "Fatima",
-    lastName: "Zahra",
-    email: "fatima.zahra@example.com",
-    phone: "+213 234 567 890",
-    role: "Utilisateur",
-    status: "Actif",
-    joinDate: "15/04/2023",
-    address: "45 Avenue de l'Indépendance, Oran",
-    bio: "Photographe amateur et amoureuse de la nature",
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: 3,
-    firstName: "Karim",
-    lastName: "Hadj",
-    email: "karim.hadj@example.com",
-    phone: "+213 345 678 901",
-    role: "Utilisateur",
-    status: "Inactif",
-    joinDate: "20/04/2023",
-    address: "78 Rue des Palmiers, Constantine",
-    bio: "Guide touristique professionnel",
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: 4,
-    firstName: "Amina",
-    lastName: "Khelif",
-    email: "amina.khelif@example.com",
-    phone: "+213 456 789 012",
-    role: "Modérateur",
-    status: "Actif",
-    joinDate: "25/04/2023",
-    address: "12 Boulevard des Martyrs, Annaba",
-    bio: "Passionnée d'histoire et de patrimoine algérien",
-    avatar: "/placeholder.svg",
-  },
-  {
-    id: 5,
-    firstName: "Mohammed",
-    lastName: "Saïd",
-    email: "mohammed.said@example.com",
-    phone: "+213 567 890 123",
-    role: "Utilisateur",
-    status: "Actif",
-    joinDate: "28/04/2023",
-    address: "56 Rue des Dunes, Tamanrasset",
-    bio: "Explorateur du désert et photographe",
-    avatar: "/placeholder.svg",
-  },
-]
+interface User {
+  _id: string
+  name?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  role?: "Utilisateur" | "Modérateur" | "Admin"
+  status?: "Actif" | "Inactif"
+  password?: string
+  createdAt?: string
+  updatedAt?: string
+}
 
-export default function UsersPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+const ROLES = ["Utilisateur", "Modérateur", "Admin"]
+const STATUS = ["Actif", "Inactif"]
+
+export default function AdminUsers() {
+  const [users, setUsers] = useState<User[]>([])
+  const [search, setSearch] = useState("")
+  const [showForm, setShowForm] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([])
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [userToDelete, setUserToDelete] = useState<number | null>(null)
-  const itemsPerPage = 8
+  const itemsPerPage = 10
+  const [newUser, setNewUser] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    role: "Utilisateur" as User["role"],
+    status: "Actif" as User["status"],
+    password: "",
+  })
 
-  // Filtrer les utilisateurs en fonction du terme de recherche
-  const filteredUsers = usersData.filter(
-    (user) =>
-      user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  const fetchUsers = async () => {
+    const res = await fetch("/api/users")
+    const data = await res.json()
+    setUsers(data)
+  }
+
+  const handleEdit = (user: User) => {
+    setEditingId(user._id)
+    setNewUser({
+      name: user.name || "",
+      email: user.email || "",
+      phone: user.phone || "",
+      role: user.role || "Utilisateur",
+      status: user.status || "Actif",
+      password: "",
+    })
+    setShowForm(true)
+  }
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Supprimer cet utilisateur ?")) return
+    await fetch(`/api/users/${id}`, { method: "DELETE" })
+    fetchUsers()
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newUser.name || !newUser.email || !newUser.phone || !newUser.role || !newUser.status || (!editingId && !newUser.password)) {
+      alert("Tous les champs sont requis")
+      return
+    }
+    const url = editingId ? `/api/users/${editingId}` : "/api/users"
+    const method = editingId ? "PUT" : "POST"
+    const body = { ...newUser } as typeof newUser & { password?: string }
+    if (editingId && !('password' in body) || !body.password) { delete (body as any).password }
+    const res = await fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (res.ok) {
+      setShowForm(false)
+      setEditingId(null)
+      setNewUser({ name: "", email: "", phone: "", role: "Utilisateur", status: "Actif", password: "" })
+      fetchUsers()
+    } else {
+      alert("Erreur lors de l'opération")
+    }
+  }
+
+  const filteredUsers = users.filter(u =>
+    ((u.name || "") + " " + (u.firstName || "") + " " + (u.lastName || "")).toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || "").toLowerCase().includes(search.toLowerCase())
   )
 
-  // Pagination
-  const indexOfLastUser = currentPage * itemsPerPage
-  const indexOfFirstUser = indexOfLastUser - itemsPerPage
-  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser)
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-
-  // Gestion des sélections
-  const toggleSelectAll = () => {
-    if (selectedUsers.length === currentUsers.length) {
-      setSelectedUsers([])
-    } else {
-      setSelectedUsers(currentUsers.map((user) => user.id))
-    }
-  }
-
-  const toggleSelectUser = (userId: number) => {
-    if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter((id) => id !== userId))
-    } else {
-      setSelectedUsers([...selectedUsers, userId])
-    }
-  }
-
-  // Gestion de la suppression
-  const handleDeleteClick = (userId: number) => {
-    setUserToDelete(userId)
-    setShowDeleteModal(true)
-  }
-
-  const confirmDelete = () => {
-    // Logique de suppression ici
-    console.log(`Suppression de l'utilisateur ${userToDelete}`)
-    setShowDeleteModal(false)
-    setUserToDelete(null)
-  }
+  const paginatedUsers = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="max-w-7xl mx-auto py-10">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Gestion des utilisateurs</h1>
-          <p className="text-gray-600">Gérez les utilisateurs de la plateforme Bladi</p>
+          <h1 className="text-2xl font-bold text-[#52734D]">Gestion des utilisateurs</h1>
+          <p className="text-gray-500">Gérez les utilisateurs de la plateforme Bladi</p>
         </div>
-        <button
-          className="flex items-center gap-2 px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors"
-          onClick={() => setShowAddModal(true)}
-        >
-          <Plus className="h-5 w-5" />
-          <span>Ajouter un utilisateur</span>
-        </button>
+        <Button className="bg-[#52734D] hover:bg-[#3A5A40] text-white px-6" onClick={() => { setShowForm(true); setEditingId(null); setNewUser({ name: "", email: "", phone: "", role: "Utilisateur", status: "Actif", password: "" }) }}>
+          <Plus className="mr-2 h-5 w-5" /> Ajouter un utilisateur
+        </Button>
       </div>
-
-      {/* Filtres et recherche */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="relative max-w-md w-full">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <input
-            type="text"
-            placeholder="Rechercher un utilisateur..."
-            className="w-full pl-10 pr-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#588157] focus:border-transparent"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            <Filter className="h-4 w-4 text-gray-500" />
-            <span>Filtres</span>
-          </button>
-          <button className="px-4 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-            Exporter
-          </button>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+        <Input
+          placeholder="Rechercher un utilisateur..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="max-w-md"
+        />
+        <Button variant="outline" className="ml-2"><Filter className="h-4 w-4 mr-1" />Filtres</Button>
+        <Button variant="outline">Exporter</Button>
       </div>
-
-      {/* Table des utilisateurs */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50">
-                <th className="px-6 py-3 text-left">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                      checked={selectedUsers.length === currentUsers.length && currentUsers.length > 0}
-                      onChange={toggleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nom</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Téléphone
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rôle</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Statut
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Date d'inscription
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {currentUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-[#588157] border-gray-300 rounded focus:ring-[#588157]"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={() => toggleSelectUser(user.id)}
-                      />
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <div className="h-8 w-8 rounded-full bg-[#588157] flex items-center justify-center text-white">
-                        <span>{user.firstName.charAt(0)}</span>
-                      </div>
-                      <div className="ml-3">
-                        <div className="font-medium text-gray-900">
-                          {user.firstName} {user.lastName}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.phone}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.role}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.status === "Actif" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {user.status}
+      <div className="bg-white rounded-xl shadow p-4 overflow-x-auto">
+        <table className="min-w-full text-sm">
+          <thead>
+            <tr className="bg-[#F6F7F2] text-gray-700">
+              <th className="py-3 px-2 text-left font-semibold">Nom</th>
+              <th className="py-3 px-2 text-left font-semibold">Email</th>
+              <th className="py-3 px-2 text-left font-semibold">Téléphone</th>
+              <th className="py-3 px-2 text-left font-semibold">Rôle</th>
+              <th className="py-3 px-2 text-left font-semibold">Statut</th>
+              <th className="py-3 px-2 text-left font-semibold">Date d'inscription</th>
+              <th className="py-3 px-2 text-left font-semibold">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedUsers.map(user => {
+              const {
+                name = "",
+                firstName = "",
+                lastName = "",
+                email = "-",
+                phone = "-",
+                role = "-",
+                status = "-",
+                createdAt = "",
+                _id
+              } = user
+              const displayName = name || (firstName + " " + lastName).trim() || email
+              return (
+                <tr key={_id} className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-2 font-medium flex items-center gap-2">
+                    <span className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#52734D] text-white font-bold">
+                      {displayName.split(" ").map(n => n[0]).join("").slice(0,2).toUpperCase()}
                     </span>
+                    {displayName}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.joinDate}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex justify-end gap-2">
-                      <Link href={`/admin/utilisateurs/${user.id}`}>
-                        <button className="p-1 rounded-md hover:bg-gray-100">
-                          <Eye className="h-5 w-5 text-gray-500" />
-                        </button>
-                      </Link>
-                      <Link href={`/admin/utilisateurs/edit/${user.id}`}>
-                        <button className="p-1 rounded-md hover:bg-gray-100">
-                          <Edit className="h-5 w-5 text-blue-500" />
-                        </button>
-                      </Link>
-                      <button className="p-1 rounded-md hover:bg-gray-100" onClick={() => handleDeleteClick(user.id)}>
-                        <Trash2 className="h-5 w-5 text-red-500" />
-                      </button>
-                    </div>
+                  <td className="py-2 px-2">{email}</td>
+                  <td className="py-2 px-2">{phone}</td>
+                  <td className="py-2 px-2">{role}</td>
+                  <td className="py-2 px-2">
+                    <Badge className={status === "Actif" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}>
+                      {status}
+                    </Badge>
+                  </td>
+                  <td className="py-2 px-2">{createdAt ? new Date(createdAt).toLocaleDateString() : "-"}</td>
+                  <td className="py-2 px-2 flex gap-2">
+                    <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}><Pencil className="h-4 w-4 text-[#52734D]" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(_id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
                   </td>
                 </tr>
+              )
+            })}
+          </tbody>
+        </table>
+        {filteredUsers.length === 0 && (
+          <div className="text-center text-gray-500 py-8">Aucun utilisateur trouvé.</div>
+        )}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-2 py-4">
+            <div className="text-sm text-gray-500">
+              Affichage de {(currentPage - 1) * itemsPerPage + 1} à {Math.min(currentPage * itemsPerPage, filteredUsers.length)} sur {filteredUsers.length} utilisateurs
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>&lt;</Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <Button key={page} variant={page === currentPage ? "default" : "outline"} size="icon" onClick={() => setCurrentPage(page)}>{page}</Button>
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
-          <div className="text-sm text-gray-500">
-            Affichage de {indexOfFirstUser + 1} à {Math.min(indexOfLastUser, filteredUsers.length)} sur{" "}
-            {filteredUsers.length} utilisateurs
+              <Button variant="outline" size="icon" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>&gt;</Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronLeft className="h-5 w-5 text-gray-500" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 rounded-md ${
-                  currentPage === page ? "bg-[#588157] text-white" : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className="p-1 rounded-md hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronRight className="h-5 w-5 text-gray-500" />
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Modal d'ajout d'utilisateur */}
-      {showAddModal && (
+      {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Ajouter un utilisateur</h2>
-            <form className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Prénom
-                  </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-1">
-                    Nom
-                  </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                  />
-                </div>
-              </div>
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                />
-              </div>
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Téléphone
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                />
-              </div>
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-                  Rôle
-                </label>
-                <select
-                  id="role"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                >
-                  <option value="Utilisateur">Utilisateur</option>
-                  <option value="Modérateur">Modérateur</option>
-                  <option value="Administrateur">Administrateur</option>
+          <div className="bg-white rounded-xl p-8 max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <h2 className="text-xl font-semibold mb-4 text-[#344E41]">{editingId ? "Modifier l'utilisateur" : "Ajouter un utilisateur"}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input placeholder="Nom" value={newUser.name} onChange={e => setNewUser({ ...newUser, name: e.target.value })} />
+                <Input placeholder="Email" type="email" value={newUser.email} onChange={e => setNewUser({ ...newUser, email: e.target.value })} />
+                <Input placeholder="Téléphone" value={newUser.phone} onChange={e => setNewUser({ ...newUser, phone: e.target.value })} />
+                <select className="w-full border rounded p-2" value={newUser.role} onChange={e => setNewUser({ ...newUser, role: e.target.value as User["role"] })}>
+                  {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
+                <select className="w-full border rounded p-2" value={newUser.status} onChange={e => setNewUser({ ...newUser, status: e.target.value as User["status"] })}>
+                  {STATUS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <Input placeholder="Mot de passe" type="password" value={newUser.password} onChange={e => setNewUser({ ...newUser, password: e.target.value })} />
               </div>
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                  Adresse
-                </label>
-                <input
-                  type="text"
-                  id="address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                />
-              </div>
-              <div>
-                <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                  Biographie
-                </label>
-                <textarea
-                  id="bio"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#588157]"
-                ></textarea>
-              </div>
-              <div className="flex justify-end gap-2 pt-4">
-                <button
-                  type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                  onClick={() => setShowAddModal(false)}
-                >
-                  Annuler
-                </button>
-                <button type="submit" className="px-4 py-2 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40]">
-                  Ajouter
-                </button>
+              <div className="flex justify-end gap-4">
+                <Button type="button" variant="outline" onClick={() => { setShowForm(false); setEditingId(null); }}>Annuler</Button>
+                <Button type="submit" className="bg-[#52734D] hover:bg-[#3A5A40] text-white">{editingId ? "Mettre à jour" : "Ajouter"}</Button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de confirmation de suppression */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">Confirmer la suppression</h2>
-            <p className="text-gray-600 mb-6">
-              Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
-                onClick={() => setShowDeleteModal(false)}
-              >
-                Annuler
-              </button>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700" onClick={confirmDelete}>
-                Supprimer
-              </button>
-            </div>
           </div>
         </div>
       )}
