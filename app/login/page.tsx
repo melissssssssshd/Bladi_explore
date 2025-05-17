@@ -113,10 +113,16 @@ export default function LoginPage() {
       // Stocker les informations d'authentification
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      console.log("Données stockées dans localStorage:", {
-        token: data.token,
-        user: data.user,
-      });
+      // Ajout : stocker userId et userName pour la réservation
+      if (data.user) {
+        const userId = data.user.userId || data.user._id || data.user.id;
+        const userName =
+          data.user.firstName && data.user.lastName
+            ? `${data.user.firstName} ${data.user.lastName}`
+            : data.user.name || data.user.email || "";
+        if (userId) localStorage.setItem("userId", userId);
+        if (userName) localStorage.setItem("userName", userName);
+      }
 
       // Afficher le message de succès avec le toast
       const roleMessage =

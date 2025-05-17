@@ -6,9 +6,13 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Bladi Tourisme",
+  title: "Bladi بلادي",
   description: "Découvrez l'Algérie",
-  generator: "v0.dev",
+  icons: {
+    icon: "images/logo.png",
+    shortcut: "images/logo.png",
+    apple: "images/logo.png",
+  },
 };
 
 export default function RootLayout({

@@ -45,6 +45,7 @@ export default function AdminReservationsPage() {
             <thead>
               <tr className="bg-[#e9ecef] text-[#344E41]">
                 <th className="py-3 px-4 text-left">Utilisateur</th>
+                <th className="py-3 px-4 text-left">ID Utilisateur</th>
                 <th className="py-3 px-4 text-left">Offre</th>
                 <th className="py-3 px-4 text-left">Date</th>
                 <th className="py-3 px-4 text-left">Participants</th>
@@ -58,16 +59,10 @@ export default function AdminReservationsPage() {
                   className="border-b hover:bg-[#f1f3f5] transition"
                 >
                   <td className="py-2 px-4 font-semibold text-[#344E41]">
-                    {r.userName ? (
-                      <span>
-                        {r.userName}{" "}
-                        <span className="text-xs text-gray-400">
-                          ({r.userEmail})
-                        </span>
-                      </span>
-                    ) : (
-                      r.userEmail || "-"
-                    )}
+                    {r.userName || "-"}
+                  </td>
+                  <td className="py-2 px-4 text-xs text-gray-500">
+                    {r.userId || "-"}
                   </td>
                   <td className="py-2 px-4">{r.offreNom || "-"}</td>
                   <td className="py-2 px-4">
@@ -75,13 +70,15 @@ export default function AdminReservationsPage() {
                   </td>
                   <td className="py-2 px-4">{r.participants ?? "-"}</td>
                   <td className="py-2 px-4">
-                    <Badge
-                      variant={
-                        r.status === "Annulée" ? "destructive" : "default"
-                      }
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${
+                        r.status === "Annulée"
+                          ? "bg-red-100 text-red-600"
+                          : "bg-green-100 text-green-700"
+                      }`}
                     >
                       {r.status || "Validée"}
-                    </Badge>
+                    </span>
                   </td>
                 </tr>
               ))}

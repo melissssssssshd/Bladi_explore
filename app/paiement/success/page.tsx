@@ -22,9 +22,9 @@ export default function PaiementSuccess() {
       </p>
       <button
         className="mt-6 px-4 py-2 bg-blue-600 text-white rounded"
-        onClick={() => router.push("/")}
+        onClick={() => router.back()}
       >
-        Retour à l'accueil
+        Retour
       </button>
     </div>
   );

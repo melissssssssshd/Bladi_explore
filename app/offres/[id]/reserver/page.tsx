@@ -39,8 +39,15 @@ export default function ReservationPage({
     fetchOffre();
   }, [params]);
 
-  // Simuler l'authentification utilisateur (à remplacer par vrai check)
-  const isAuthenticated = true; // À remplacer par ton vrai hook/auth
+  // Récupérer l'utilisateur connecté (à adapter selon ton auth réelle)
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const userName =
+    typeof window !== "undefined" ? localStorage.getItem("userName") : null;
+  const userEmail =
+    typeof window !== "undefined"
+      ? JSON.parse(localStorage.getItem("user") || "{}").email
+      : null;
 
   // Formulaire de réservation avec Stripe
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -50,9 +57,12 @@ export default function ReservationPage({
     const formData = new FormData(e.currentTarget);
     const date = formData.get("date");
     const participants = Number(formData.get("participants"));
-    const userEmail = "test@example.com";
-    // Correction : unwrap params avec React.use() (future proof)
     const { id } = params;
+    if (!userId || !userName) {
+      setError("Vous devez être connecté pour réserver.");
+      setPaiementLoading(false);
+      return;
+    }
     try {
       const res = await fetch("/api/paiement/checkout-session", {
         method: "POST",
@@ -61,6 +71,8 @@ export default function ReservationPage({
           offreId: id,
           offreNom: offre?.nom || "Offre",
           prix: offre?.prix || 100,
+          userId,
+          userName,
           userEmail,
           date,
           participants,
@@ -92,7 +104,7 @@ export default function ReservationPage({
       </div>
     );
 
-  if (!isAuthenticated) {
+  if (!userId || !userName) {
     return (
       <div className="flex flex-col items-center justify-center h-64 gap-4">
         <p className="text-lg">Vous devez être connecté pour réserver.</p>

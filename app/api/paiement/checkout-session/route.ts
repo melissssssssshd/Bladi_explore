@@ -6,8 +6,17 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     // Création automatique de la réservation en base (simulation)
-    const { offreId, offreNom, prix, userEmail, date, participants } = body;
-    if (!offreId || !userEmail) {
+    const {
+      offreId,
+      offreNom,
+      prix,
+      userId,
+      userName,
+      userEmail,
+      date,
+      participants,
+    } = body;
+    if (!offreId || !userId || !userName) {
       return NextResponse.json(
         { error: "Paramètres manquants" },
         { status: 400 }
@@ -19,6 +28,8 @@ export async function POST(request: Request) {
       offreId,
       offreNom,
       prix,
+      userId,
+      userName,
       userEmail,
       date: date || new Date(),
       participants: participants || 1,

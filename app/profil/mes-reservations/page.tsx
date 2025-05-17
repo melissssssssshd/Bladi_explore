@@ -3,17 +3,23 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export default function MesReservationsPage() {
-  // À remplacer par l'email de l'utilisateur connecté (auth réelle)
-  const userEmail = "test@example.com";
+  // À remplacer par l'ID de l'utilisateur connecté (auth réelle)
+  const userId =
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function fetchReservations() {
+      if (!userId) {
+        setError("Utilisateur non connecté");
+        setLoading(false);
+        return;
+      }
       try {
         const res = await fetch(
-          `/api/user/reservations?email=${encodeURIComponent(userEmail)}`
+          `/api/user/reservations?userId=${encodeURIComponent(userId)}`
         );
         if (res.ok) {
           setReservations(await res.json());
@@ -26,7 +32,7 @@ export default function MesReservationsPage() {
       setLoading(false);
     }
     fetchReservations();
-  }, []);
+  }, [userId]);
 
   const handleCancel = async (id: string) => {
     if (!window.confirm("Annuler cette réservation ?")) return;
