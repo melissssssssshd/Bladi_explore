@@ -1,17 +1,28 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AuthCheck() {
+interface AuthCheckProps {
+  children: ReactNode;
+}
+
+export default function AuthCheck({ children }: AuthCheckProps) {
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
+    } else {
+      setIsAuthenticated(true);
     }
   }, [router]);
 
-  return null;
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return <>{children}</>;
 }

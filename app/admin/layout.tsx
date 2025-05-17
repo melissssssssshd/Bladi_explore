@@ -17,6 +17,7 @@ import {
   Search,
   Globe,
   ChevronDown,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,21 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     {
       name: "Publications",
       href: "/admin/publications",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      name: "Forum",
+      href: "/admin/forum",
+      icon: <MessageCircle className="h-5 w-5" />,
+    },
+    {
+      name: "Offres",
+      href: "/admin/offres",
+      icon: <FileText className="h-5 w-5" />,
+    },
+    {
+      name: "Réservations",
+      href: "/admin/reservations",
       icon: <FileText className="h-5 w-5" />,
     },
   ];

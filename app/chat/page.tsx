@@ -1,4 +1,4 @@
-import ChatBox from '@/components/ChatBox';
+import ChatBox from '@/components/ChatBot';
 
 export default function ChatPage() {
   return (

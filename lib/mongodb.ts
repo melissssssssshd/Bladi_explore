@@ -1,7 +1,7 @@
 import { MongoClient } from "mongodb";
 
 if (!process.env.MONGODB_URI) {
-  throw new Error('MONGODB_URI is not defined');
+  throw new Error("MONGODB_URI is not defined");
 }
 
 const uri = process.env.MONGODB_URI;
@@ -39,7 +39,8 @@ clientPromise
 
 export async function connectToDatabase() {
   const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB);
+  // Forcer la base à 'bladi-tourisme' partout
+  const db = client.db("bladi-tourisme");
   return { client, db };
 }
 

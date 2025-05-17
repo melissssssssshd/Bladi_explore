@@ -2,13 +2,30 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Map, Compass, Heart, User, LogOut } from "lucide-react";
+import {
+  Home,
+  Map,
+  Compass,
+  Heart,
+  User,
+  LogOut,
+  MessageCircle,
+  Briefcase,
+  Activity,
+} from "lucide-react";
 
 const navigation = [
   { name: "Accueil", href: "/", icon: Home },
-  { name: "Explorer", href: "/explorer", icon: Compass }, // Changé vers la route générale
+  { name: "Explorer", href: "/explorer", icon: Compass },
+  { name: "Forum", href: "/forum", icon: MessageCircle },
   { name: "Carte", href: "/page-simplified", icon: Map },
   { name: "Favoris", href: "/favoris", icon: Heart },
+  { name: "Offres", href: "/offres", icon: Briefcase },
+  {
+    name: "Mes réservations",
+    href: "/profil/mes-reservations",
+    icon: Activity,
+  }, // Ajout du bouton Mes réservations
   { name: "Profil", href: "/profil", icon: User },
 ];
 
@@ -38,11 +55,14 @@ export function Sidebar() {
             <Link
               key={item.name}
               href={item.href}
-              className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg ${
-                pathname.startsWith(item.href)
-                  ? "bg-[#588157] text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+                ${
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href))
+                    ? "bg-[#588157] text-white"
+                    : "text-gray-600 hover:bg-gray-100"
+                }
+              `}
             >
               <item.icon className="w-5 h-5 mr-3" />
               {item.name}

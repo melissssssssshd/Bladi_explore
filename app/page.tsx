@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Image from "next/image"
-import { motion, AnimatePresence } from "framer-motion"
-import { Globe, Search, ChevronRight, ChevronLeft } from "lucide-react"
-import Link from "next/link"
+import { useState } from "react";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
+import { Globe, Search, ChevronRight, ChevronLeft } from "lucide-react";
+import Link from "next/link";
 
 const destinations = [
   {
@@ -36,7 +36,8 @@ const destinations = [
     image: "/images/skikda.jpeg",
     title: "SKIKDA",
     subtitle: "Côte Méditerranéenne",
-    description: "Admirez les plages de sable fin et les criques secrètes de cette perle de la côte algérienne.",
+    description:
+      "Admirez les plages de sable fin et les criques secrètes de cette perle de la côte algérienne.",
   },
   {
     id: 5,
@@ -46,7 +47,7 @@ const destinations = [
     description:
       "Promenez-vous dans ce jardin botanique luxuriant avec vue sur le monument emblématique Maqam Echahid.",
   },
-]
+];
 
 const categories = [
   "Plages d'Algérie",
@@ -54,18 +55,20 @@ const categories = [
   "Cuisine traditionnelle",
   "Festivals locaux",
   "Hébergements authentiques",
-]
+];
 
 export default function Home() {
-  const [activeDestination, setActiveDestination] = useState(0)
+  const [activeDestination, setActiveDestination] = useState(0);
 
   const nextDestination = () => {
-    setActiveDestination((prev) => (prev + 1) % destinations.length)
-  }
+    setActiveDestination((prev) => (prev + 1) % destinations.length);
+  };
 
   const prevDestination = () => {
-    setActiveDestination((prev) => (prev - 1 + destinations.length) % destinations.length)
-  }
+    setActiveDestination(
+      (prev) => (prev - 1 + destinations.length) % destinations.length
+    );
+  };
 
   return (
     <main className="min-h-screen bg-white">
@@ -73,16 +76,27 @@ export default function Home() {
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 lg:px-20 bg-white/90 backdrop-blur-md shadow-sm">
         <div className="flex items-center gap-2">
           <Globe className="h-6 w-6 text-[#3A5A40]" />
-          <span className="text-xl font-bold tracking-widest text-[#3A5A40]">Bladi</span>
+          <span className="text-xl font-bold tracking-widest text-[#3A5A40]">
+            Bladi
+          </span>
         </div>
         <div className="hidden md:flex items-center space-x-8">
-          <Link href="/" className="text-[#344E41] hover:text-[#588157] transition-colors">
+          <Link
+            href="/"
+            className="text-[#344E41] hover:text-[#588157] transition-colors"
+          >
             Accueil
           </Link>
-          <Link href="/explorer" className="text-[#344E41] hover:text-[#588157] transition-colors">
+          <Link
+            href="/explorers"
+            className="text-[#344E41] hover:text-[#588157] transition-colors"
+          >
             Explorer
           </Link>
-          <Link href="/about" className="text-[#344E41] hover:text-[#588157] transition-colors">
+          <Link
+            href="/about"
+            className="text-[#344E41] hover:text-[#588157] transition-colors"
+          >
             À propos
           </Link>
         </div>
@@ -106,19 +120,23 @@ export default function Home() {
       <section className="pt-24 pb-16 px-6 lg:px-20">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#344E41] mb-6">
                 Découvrez les destinations paradisiaques
               </h1>
               <p className="text-lg text-gray-600 mb-8">
-                Explorez, planifiez et vivez des expériences uniques dans nos régions. Des paysages à couper le souffle
-                vous attendent.
+                Explorez, planifiez et vivez des expériences uniques dans nos
+                régions. Des paysages à couper le souffle vous attendent.
               </p>
               <Link
-                href="/explorer"
+                href="/explorers"
                 className="inline-flex items-center px-6 py-3 bg-[#588157] text-white rounded-md hover:bg-[#3A5A40] transition-colors"
               >
-                Élevé
+                Explorer
               </Link>
             </motion.div>
 
@@ -129,11 +147,18 @@ export default function Home() {
                 transition={{ delay: 0.3 }}
                 className="relative h-64 rounded-2xl overflow-hidden shadow-lg"
               >
-                <Image src="/images/tassili.jpeg" alt="Tassili n'Ajjer" fill className="object-cover" />
+                <Image
+                  src="/images/tassili.jpeg"
+                  alt="Tassili n'Ajjer"
+                  fill
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-4 text-white">
                   <h3 className="text-xl font-bold">Tassili n'Ajjer</h3>
-                  <p className="text-sm">Des formations rocheuses distinctives</p>
+                  <p className="text-sm">
+                    Des formations rocheuses distinctives
+                  </p>
                 </div>
               </motion.div>
               <motion.div
@@ -142,7 +167,12 @@ export default function Home() {
                 transition={{ delay: 0.4 }}
                 className="relative h-64 rounded-2xl overflow-hidden shadow-lg mt-8"
               >
-                <Image src="/images/plage-sidi-merouane.jpeg" alt="Lac Alpin" fill className="object-cover" />
+                <Image
+                  src="/images/plage-sidi-merouane.jpeg"
+                  alt="Lac Alpin"
+                  fill
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-4 text-white">
                   <h3 className="text-xl font-bold">Lac Alpin</h3>
@@ -155,7 +185,12 @@ export default function Home() {
                 transition={{ delay: 0.5 }}
                 className="relative h-64 rounded-2xl overflow-hidden shadow-lg"
               >
-                <Image src="/images/skikda.jpeg" alt="Paradis Tropical" fill className="object-cover" />
+                <Image
+                  src="/images/skikda.jpeg"
+                  alt="Paradis Tropical"
+                  fill
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-4 text-white">
                   <h3 className="text-xl font-bold">Paradis Tropical</h3>
@@ -168,7 +203,12 @@ export default function Home() {
                 transition={{ delay: 0.6 }}
                 className="relative h-64 rounded-2xl overflow-hidden shadow-lg mt-8"
               >
-                <Image src="/images/casbah.jpeg" alt="La Casbah" fill className="object-cover" />
+                <Image
+                  src="/images/casbah.jpeg"
+                  alt="La Casbah"
+                  fill
+                  className="object-cover"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 p-4 text-white">
                   <h3 className="text-xl font-bold">La Casbah</h3>
@@ -184,10 +224,13 @@ export default function Home() {
       <section className="py-16 px-6 lg:px-20 bg-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-[#344E41] mb-4">Recherchez une idée</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-[#344E41] mb-4">
+              Recherchez une idée
+            </h2>
             <p className="text-lg text-gray-600 max-w-3xl">
-              Que souhaitez-vous explorer ensuite ? Pensez à un lieu qui vous fait rêver, par exemple « plages d'Algérie
-              », et découvrez nos suggestions personnalisées.
+              Que souhaitez-vous explorer ensuite ? Pensez à un lieu qui vous
+              fait rêver, par exemple « plages d'Algérie », et découvrez nos
+              suggestions personnalisées.
             </p>
           </div>
 
@@ -206,7 +249,9 @@ export default function Home() {
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-[#344E41] mb-4">Recherches populaires :</h3>
+            <h3 className="text-lg font-medium text-[#344E41] mb-4">
+              Recherches populaires :
+            </h3>
             <div className="flex flex-wrap gap-3">
               {categories.map((category, index) => (
                 <button
@@ -226,9 +271,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto">
           <div className="flex justify-between items-end mb-12">
             <div>
-              <h2 className="text-3xl md:text-4xl font-bold text-[#344E41] mb-4">Destinations Populaires</h2>
+              <h2 className="text-3xl md:text-4xl font-bold text-[#344E41] mb-4">
+                Destinations Populaires
+              </h2>
               <p className="text-lg text-gray-600 max-w-2xl">
-                Découvrez les lieux les plus appréciés par nos voyageurs à travers l'Algérie.
+                Découvrez les lieux les plus appréciés par nos voyageurs à
+                travers l'Algérie.
               </p>
             </div>
             <div className="flex gap-4">
@@ -250,7 +298,8 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-8">
             <AnimatePresence mode="wait">
               {[0, 1, 2].map((offset) => {
-                const index = (activeDestination + offset) % destinations.length
+                const index =
+                  (activeDestination + offset) % destinations.length;
                 return (
                   <motion.div
                     key={destinations[index].id}
@@ -271,11 +320,17 @@ export default function Home() {
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <h3 className="text-xl font-bold text-[#344E41]">{destinations[index].title}</h3>
-                          <p className="text-[#588157]">{destinations[index].subtitle}</p>
+                          <h3 className="text-xl font-bold text-[#344E41]">
+                            {destinations[index].title}
+                          </h3>
+                          <p className="text-[#588157]">
+                            {destinations[index].subtitle}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-gray-600 mb-4">{destinations[index].description}</p>
+                      <p className="text-gray-600 mb-4">
+                        {destinations[index].description}
+                      </p>
                       <Link
                         href={`/destination/${destinations[index].id}`}
                         className="inline-flex items-center text-[#588157] font-medium hover:text-[#3A5A40] transition-colors"
@@ -285,7 +340,7 @@ export default function Home() {
                       </Link>
                     </div>
                   </motion.div>
-                )
+                );
               })}
             </AnimatePresence>
           </div>
@@ -295,9 +350,12 @@ export default function Home() {
       {/* Newsletter Section */}
       <section className="py-16 px-6 lg:px-20 bg-[#3A5A40] text-white">
         <div className="max-w-7xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Restez Informé</h2>
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Restez Informé
+          </h2>
           <p className="text-lg text-white/80 max-w-2xl mx-auto mb-8">
-            Inscrivez-vous à notre newsletter pour recevoir les dernières nouvelles et offres spéciales.
+            Inscrivez-vous à notre newsletter pour recevoir les dernières
+            nouvelles et offres spéciales.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
             <input
@@ -320,29 +378,44 @@ export default function Home() {
               <Globe className="h-6 w-6" />
               <span className="text-xl font-bold tracking-widest">Bladi</span>
             </div>
-            <p className="text-white/70">Votre guide ultime pour découvrir toutes les merveilles de l'Algérie.</p>
+            <p className="text-white/70">
+              Votre guide ultime pour découvrir toutes les merveilles de
+              l'Algérie.
+            </p>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-4">Liens Rapides</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Accueil
                 </Link>
               </li>
               <li>
-                <Link href="/explorer" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/categories"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Explorer
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/about"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   À propos
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/contact"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Contact
                 </Link>
               </li>
@@ -353,22 +426,34 @@ export default function Home() {
             <h3 className="text-lg font-semibold mb-4">Catégories</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/plages" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/plages"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Plages
                 </Link>
               </li>
               <li>
-                <Link href="/montagnes" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/montagnes"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Montagnes
                 </Link>
               </li>
               <li>
-                <Link href="/villes" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/villes"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Villes
                 </Link>
               </li>
               <li>
-                <Link href="/desert" className="text-white/70 hover:text-white transition-colors">
+                <Link
+                  href="/desert"
+                  className="text-white/70 hover:text-white transition-colors"
+                >
                   Désert
                 </Link>
               </li>
@@ -390,5 +475,5 @@ export default function Home() {
         </div>
       </footer>
     </main>
-  )
+  );
 }
